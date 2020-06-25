@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.yourcompany.newapp</groupId>
+    <artifactId>irritating-pump</artifactId>
+    <version>1.0.0</version>
+  </parent>
+  <artifactId>spring-boot-circuit-breaker-tests</artifactId>
+  <name>Spring Boot - Circuit Breaker Example - Tests</name>
+  <dependencies>
+    <dependency>
+      <groupId>org.jboss.arquillian.junit</groupId>
+      <artifactId>arquillian-junit-standalone</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.arquillian.cube</groupId>
+      <artifactId>arquillian-cube-openshift</artifactId>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>io.undertow</groupId>
+          <artifactId>undertow-core</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.rest-assured</groupId>
+      <artifactId>rest-assured</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish</groupId>
+      <artifactId>javax.json</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!--
+    We need this because Apache httpclient depends on it
+    but the import of the Spring Boot BOM excludes it
+    (which makes sense for regular Spring Boot applications since they use jcl-over-slf4j,
+    but doesn't make sense for test artifacts like this one)
+    -->
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+    </dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <!--
+        This setting overrides the "openshift" profile settings in the parent
+        It's needed because the RHOAR docs use
+
+        mvn clean fabric8:deploy -Popenshift
+
+        to deploy the application, so we need to make sure this module doesn't get deployed
+        -->
+      <plugin>
+        <groupId>io.fabric8</groupId>
+        <artifactId>fabric8-maven-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  <profiles>
+    <profile>
+      <id>openshift-it</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>io.fabric8</groupId>
+            <artifactId>fabric8-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>resource</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <skip>false</skip>
+              <profile>aggregate</profile>
+            </configuration>
+            <!--
+               We add the dependencies to the two modules that need to be deployed for the tests
+               to run.
+               This is done in order to make FMP pick up the generated Openshift
+               resources file of each module and create an "uber" resources file containing
+               resources for both modules (which is what the aggregate profile above does)
+            -->
+            <dependencies>
+              <dependency>
+                <groupId>dev.snowdrop.example</groupId>
+                <artifactId>spring-boot-circuit-breaker-name</artifactId>
+                <version>${project.version}</version>
+              </dependency>
+              <dependency>
+                <groupId>dev.snowdrop.example</groupId>
+                <artifactId>spring-boot-circuit-breaker-greeting</artifactId>
+                <version>${project.version}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>
+

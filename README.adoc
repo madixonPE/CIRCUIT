@@ -1,0 +1,67 @@
+= Circuit Breaker - Spring Boot Example Application
+
+IMPORTANT: This runs best when deployed to OpenShift in order to use the circuit breaker functionality. For more details on using this example application with a single-node OpenShift cluster, CI/CD deployments, as well as the rest of the runtime, see the link:https://access.redhat.com/documentation/en-us/red_hat_support_for_spring_boot/[Spring Boot Runtime Guide].
+
+IMPORTANT: This example application requires Java 8 JDK or greater and Maven 3.3.x or greater.
+
+
+
+== Running the Example Application on a Single-node OpenShift Cluster
+If you have a single-node OpenShift cluster, such as Minishift or Red Hat Container Development Kit, installed and running, you can also deploy your example application there. A single-node OpenShift cluster provides you with access to a cloud environment that is similar to a production environment.
+
+To deploy your example application to a running single-node OpenShift cluster:
+
+. Log in and create your project.
++
+[source,bash,options="nowrap",subs="attributes+"]
+----
+$ unzip irritating-pump.zip
+
+$ cd irritating-pump
+
+$ oc login -u developer -p developer
+
+$ oc new-project MY_PROJECT_NAME
+
+$ mvn clean fabric8:deploy -Popenshift
+----
+
+== Interacting with the Example Application on a Single-node OpenShift Cluster
+
+To interact with your example application while it is running on a Single-node OpenShift Cluster, you first need to obtain its URL:
+
+[source,bash,options="nowrap",subs="attributes+"]
+----
+$ oc get route springboot-cb-greeting -o jsonpath={$.spec.host}
+
+springboot-cb-greeting-MY_PROJECT_NAME.LOCAL_OPENSHIFT_HOSTNAME
+
+$ oc get route springboot-cb-name -o jsonpath={$.spec.host}
+
+springboot-cb-name-MY_PROJECT_NAME.LOCAL_OPENSHIFT_HOSTNAME
+----
+
+
+You can use the form at your application's URL or you can use the `curl` command:
+
+
+[source,bash,options="nowrap",subs="attributes+"]
+----
+$ curl http://springboot-cb-greeting-MY_PROJECT_NAME.LOCAL_OPENSHIFT_HOSTNAME/api/greeting
+{"content":"Hello, World!"}
+
+$ curl -X PUT -H "Content-Type: application/json" -d '{"state": "fail"}' http://springboot-cb-name-MY_PROJECT_NAME.LOCAL_OPENSHIFT_HOSTNAME/api/state
+
+$ curl http://springboot-cb-greeting-MY_PROJECT_NAME.LOCAL_OPENSHIFT_HOSTNAME/api/greeting
+{"content":"Hello, Fallback!"}
+
+$ curl -X PUT -H "Content-Type: application/json" -d '{"state": "ok"}' http://springboot-cb-name-MY_PROJECT_NAME.LOCAL_OPENSHIFT_HOSTNAME/api/state
+
+$ curl http://springboot-cb-greeting-MY_PROJECT_NAME.LOCAL_OPENSHIFT_HOSTNAME/api/greeting
+{"content":"Hello, World!"}
+----
+
+== More Information
+You can learn more about this example application and the Spring Boot runtime in the link:https://access.redhat.com/documentation/en-us/red_hat_support_for_spring_boot/[Spring Boot Runtime Guide].
+
+NOTE: Run the set of integration tests included with this example application using `mvn clean verify -Popenshift,openshift-it`.
